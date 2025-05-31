@@ -1,7 +1,11 @@
 ## ide
 **/.idea
+**/.vscode
 *.iml
 rebel.xml
+
+## vcs
+**/.github
 
 ## backend
 **/target
