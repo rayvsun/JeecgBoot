@@ -273,6 +273,12 @@ export const schemas: FormSchema[] = [
     },
   },
   {
+    field: 'user4',
+    component: 'JEllipsis',
+    label: '选中用户',
+    colProps: { span: 12 },
+  },
+  {
     field: 'role2',
     component: 'JSelectRole',
     label: '角色选择组件',
@@ -614,6 +620,42 @@ export const schemas: FormSchema[] = [
   },
   {
     field: 'pop1',
+    component: 'JEllipsis',
+    label: '选中值',
+    colProps: {
+      span: 12,
+    },
+  },
+  {
+    field: 'pop2',
+    component: 'Input',
+    label: 'JPopup带参数示例',
+    helpMessage: ['插槽模式'],
+    slot: 'JPopup2',
+    colProps: {
+      span: 12,
+    },
+  },
+  {
+    field: 'pop2',
+    component: 'JEllipsis',
+    label: '选中值',
+    colProps: {
+      span: 12,
+    },
+  },
+  {
+    field: 'pop3',
+    component: 'Input',
+    label: 'JPopup带查询条件参数示例',
+    helpMessage: ['插槽模式'],
+    slot: 'JPopup3',
+    colProps: {
+      span: 12,
+    },
+  },
+  {
+    field: 'pop3',
     component: 'JEllipsis',
     label: '选中值',
     colProps: {

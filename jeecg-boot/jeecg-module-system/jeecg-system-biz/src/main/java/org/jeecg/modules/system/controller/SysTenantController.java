@@ -412,8 +412,11 @@ public class SysTenantController {
      */
     @PutMapping("/invitationUserJoin")
     @RequiresPermissions("system:tenant:invitation:user")
-    public Result<String> invitationUserJoin(@RequestParam("ids") String ids,@RequestParam("phone") String phone){
-        sysTenantService.invitationUserJoin(ids,phone);
+    public Result<String> invitationUserJoin(@RequestParam("ids") String ids,@RequestParam(value = "phone", required = false) String phone, @RequestParam(value = "username", required = false) String username){
+        if(oConvertUtils.isEmpty(phone) && oConvertUtils.isEmpty(username)){
+            return Result.error("手机号和用户账号不能同时为空！");
+        }
+        sysTenantService.invitationUserJoin(ids,phone,username);
         return Result.ok("邀请用户成功");
     }
 
@@ -985,5 +988,17 @@ public class SysTenantController {
             result.error500("查询失败！");
         }
         return result;
+    }
+
+    /**
+     * 目前只给敲敲云人员与部门下的用户删除使用
+     *
+     * 删除用户
+     */
+    @DeleteMapping("/deleteUser")
+    public Result<String> deleteUser(@RequestBody SysUser sysUser,HttpServletRequest request){
+        Integer tenantId = oConvertUtils.getInteger(TokenUtils.getTenantIdByRequest(request), null);
+        sysTenantService.deleteUser(sysUser, tenantId);
+        return Result.ok("删除用户成功");
     }
 }

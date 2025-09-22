@@ -104,15 +104,27 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
     @Override
     @CacheEvict(value={CacheConstant.SYS_USERS_CACHE}, allEntries=true)
-    public void invitationUserJoin(String ids, String phone) {
+    public void invitationUserJoin(String ids, String phone,String username) {
         String[] idArray = ids.split(SymbolConstant.COMMA);
+        String userId = null;
+        SysUser userByPhone = null;
         //update-begin---author:wangshuai ---date:20230313  for：【QQYUN-4605】后台的邀请谁加入租户，没办法选不是租户下的用户，通过手机号邀请------------
-        SysUser userByPhone = userService.getUserByPhone(phone);
-        //说明用户不存在
-        if(null == userByPhone){
-            throw new JeecgBootException("当前用户不存在，请核对手机号");
+        if(oConvertUtils.isNotEmpty(phone)){
+            userByPhone = userService.getUserByPhone(phone);
+            //说明用户不存在
+            if(null == userByPhone){
+                throw new JeecgBootException("当前用户不存在，请核对手机号");
+            }
+            userId = userByPhone.getId();
+        }else{
+            userByPhone = userService.getUserByName(username);
+            //说明用户不存在
+            if(null == userByPhone){
+                throw new JeecgBootException("当前用户不存在，请核对手机号");
+            }
+            userId = userByPhone.getId();
         }
-        String userId = userByPhone.getId();
+
         //循环租户id
         for (String id:idArray) {
             //update-begin---author:wangshuai ---date:20221223  for：[QQYUN-3371]租户逻辑改造，改成关系表------------
@@ -889,25 +901,76 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
         if(!sysUserData.getCreateBy().equals(user.getUsername())){
             throw new JeecgBootException("您不是该用户的创建人，无法删除！");
         }
-        Date createTime = sysUserData.getCreateTime();
-        boolean sameDay = DateUtils.isSameDay(createTime, new Date());
-        if(!sameDay){
-            throw new JeecgBootException("用户不是今天创建的，无法删除！"); 
-        }
-        //step4 验证密码
-        String passwordEncode = PasswordUtil.encrypt(sysUserData.getUsername(), password, sysUserData.getSalt());
-        if(!passwordEncode.equals(sysUserData.getPassword())){
-            throw new JeecgBootException("您输入的密码不正确，无法删除该用户！");
-        }
+        
+        //update-begin---author:wangshuai---date:2025-04-11---for:【QQYUN-11839】删除用户，需要输入被删除用户的密码，这逻辑对吗？不应该是管理员的密码吗---
+        this.verifyCreateTimeAndPassword(sysUserData,password);
+        //update-end---author:wangshuai---date:2025-04-11---for:【QQYUN-11839】删除用户，需要输入被删除用户的密码，这逻辑对吗？不应该是管理员的密码吗---
+
         //step5 逻辑删除用户
         userService.deleteUser(userId);
         //step6 真实删除用户
         userService.removeLogicDeleted(Collections.singletonList(userId));
     }
 
+    /**
+     * 验证创建时间和密码
+     * 
+     * @param sysUser
+     * @param password
+     */
+    private void verifyCreateTimeAndPassword(SysUser sysUser,String password) {
+        if(null == sysUser){
+            throw new JeecgBootException("该用户不存在，无法删除！");
+        }
+        //step1 验证创建时间
+        //当前登录用户
+        LoginUser user = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+        Date createTime = sysUser.getCreateTime();
+        boolean sameDay = DateUtils.isSameDay(createTime, new Date());
+        if(!sameDay){
+            throw new JeecgBootException("用户不是今天创建的，无法删除！");
+        }
+        //step2 验证密码
+        //获取admin的用户
+        SysUser adminUser = userService.getById(user.getId());
+        String passwordEncode = PasswordUtil.encrypt(adminUser.getUsername(), password, adminUser.getSalt());
+        if(!passwordEncode.equals(adminUser.getPassword())){
+            throw new JeecgBootException("您输入的密码不正确，无法删除该用户！");
+        }
+    }
+
     @Override
     public List<SysTenant> getTenantListByUserId(String userId) {
         return tenantMapper.getTenantListByUserId(userId);
+    }
+
+    @Override
+    public void deleteUser(SysUser sysUser, Integer tenantId) {
+        //被删除人的用户id
+        String userId = sysUser.getId();
+        //被删除人的密码
+        String password = sysUser.getPassword();
+        //当前登录用户
+        LoginUser user = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+        //step1 判断当前用户是否为当前租户的创建者才可以删除
+        SysTenant sysTenant = this.getById(tenantId);
+        if(null == sysTenant || !user.getUsername().equals(sysTenant.getCreateBy())){
+            throw new JeecgBootException("您不是当前组织的创建者，无法删除用户！");
+        }
+        //step2 判断除了当前组织之外是否还有加入了其他组织
+        LambdaQueryWrapper<SysUserTenant> query = new LambdaQueryWrapper<>();
+        query.eq(SysUserTenant::getUserId,userId);
+        query.ne(SysUserTenant::getTenantId,tenantId);
+        List<SysUserTenant> sysUserTenants = userTenantMapper.selectList(query);
+        if(CollectionUtils.isNotEmpty(sysUserTenants)){
+            throw new JeecgBootException("该用户还存在于其它组织中，无法删除用户！");
+        }
+        //step3 验证创建时间和密码
+        SysUser sysUserData = userService.getById(userId);
+        this.verifyCreateTimeAndPassword(sysUserData,password);
+        //step4 真实删除用户
+        userService.deleteUser(userId);
+        userService.removeLogicDeleted(Collections.singletonList(userId));
     }
 
 }
