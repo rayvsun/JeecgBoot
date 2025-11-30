@@ -1,6 +1,7 @@
 package org.jeecg.common.util;
 
 import cn.hutool.core.io.IoUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -10,7 +11,6 @@ import org.jeecg.common.constant.CommonConstant;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.common.util.filter.SsrfFileTypeFilter;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;

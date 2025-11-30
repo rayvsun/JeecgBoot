@@ -1,10 +1,10 @@
 JeecgBoot 企业级低代码开发平台
 ===============
-当前最新版本： 3.8.3（预计发布时间：2025-09-22）
+当前最新版本： 3.9.0（预计发布时间：2025-12-01）
 
 [![AUR](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](https://github.com/zhangdaiscott/jeecg-boot/blob/master/LICENSE)
 [![](https://img.shields.io/badge/Author-北京国炬软件-orange.svg)](http://jeecg.com/aboutusIndex)
-[![](https://img.shields.io/badge/version-3.8.3-brightgreen.svg)](https://github.com
+[![](https://img.shields.io/badge/version-3.9.0-brightgreen.svg)](https://github.com
 /zhangdaiscott/jeecg-boot)
 [![GitHub stars](https://img.shields.io/github/stars/zhangdaiscott/jeecg-boot.svg?style=social&label=Stars)](https://github.com/zhangdaiscott/jeecg-boot)
 [![GitHub forks](https://img.shields.io/github/forks/zhangdaiscott/jeecg-boot.svg?style=social&label=Fork)](https://github.com/zhangdaiscott/jeecg-boot)
@@ -37,7 +37,7 @@ JeecgBoot-Vue3采用 Vue3.0、Vite、 Ant-Design-Vue4、TypeScript 等新技术�
 *   本地环境安装 `Node.js 、npm 、pnpm`
 *   Node.js 版本要求`Node 20+` 版本以上
 
- ` ( Vite 不再支持已结束生命周期（EOL）的 Node.js 18。现在需要使用 Node.js 20.19+ 或 22.12+)`
+ ` ( 因为Vite5 不再支持已 EOL 的 Node.js 14 / 16 / 17 / 19，现在需要 Node 20+ )`
 
 
   

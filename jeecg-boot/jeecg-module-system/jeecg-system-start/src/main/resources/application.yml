@@ -1,6 +1,8 @@
 spring:
   application:
     name: jeecg-system
+  config:
+    import: optional:classpath:config/application-liteflow.yml
   profiles:
 #    active: '@profile.name@'
     include: dev

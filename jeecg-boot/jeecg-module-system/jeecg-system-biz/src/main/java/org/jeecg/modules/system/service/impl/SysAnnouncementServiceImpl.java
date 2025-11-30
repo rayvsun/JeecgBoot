@@ -27,9 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
@@ -73,12 +73,11 @@ public class SysAnnouncementServiceImpl extends ServiceImpl<SysAnnouncementMappe
 			sysAnnouncementMapper.insert(sysAnnouncement);
 			// 2.插入用户通告阅读标记表记录
 			String userId = sysAnnouncement.getUserIds();
-            //update-begin-author:liusq---date:2023-10-31--for:[issues/5503]【公告】通知无法接收
+            // 代码逻辑说明: [issues/5503]【公告】通知无法接收
 			if(StringUtils.isNotBlank(userId) && userId.endsWith(",")){
 				userId = userId.substring(0, (userId.length()-1));
 			}
 			String[] userIds = userId.split(",");
-            //update-end-author:liusq---date:2023-10-31--for:[issues/5503]【公告】通知无法接收
 			String anntId = sysAnnouncement.getId();
 			Date refDate = new Date();
 			for(int i=0;i<userIds.length;i++) {
@@ -216,7 +215,7 @@ public class SysAnnouncementServiceImpl extends ServiceImpl<SysAnnouncementMappe
 //		});
 		
 		LoginUser sysUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
-		log.info(" 获取登录人 LoginUser id: {}", sysUser.getId());
+		log.debug(" 获取登录人 LoginUser id: {}", sysUser.getId());
 		Page<SysAnnouncement> page = new Page<SysAnnouncement>(pageNo,pageSize);
 		List<SysAnnouncement> list = baseMapper.queryAllMessageList(page, sysUser.getId(), fromUser, starFlag, busType, msgCategory,beginDate, endDate, noticeType);
 		return list;

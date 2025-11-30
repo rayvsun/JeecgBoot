@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
@@ -56,12 +56,19 @@ public class RestUtil {
     private final static RestTemplate RT;
 
     static {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        // 解决[issues/8859]online表单java增强失效------------
+        // 使用 Apache HttpClient 避免 JDK HttpURLConnection 的 too many bytes written 问题
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setConnectTimeout(30000);
         requestFactory.setReadTimeout(30000);
         RT = new RestTemplate(requestFactory);
-        // 解决乱码问题
-        RT.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+        // 解决乱码问题（替换 StringHttpMessageConverter 为 UTF-8）
+        for (int i = 0; i < RT.getMessageConverters().size(); i++) {
+            if (RT.getMessageConverters().get(i) instanceof StringHttpMessageConverter) {
+                RT.getMessageConverters().set(i, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+                break;
+            }
+        }
     }
 
     public static RestTemplate getRestTemplate() {
@@ -216,6 +223,16 @@ public class RestUtil {
         if (variables != null && !variables.isEmpty()) {
             url += ("?" + asUrlVariables(variables));
         }
+        // 解决[issues/8951]从jeecgboot 3.8.2 升级到 3.8.3 在线表单java增强功能报错------------
+        // Content-Length 强制设置（解决可能出现的截断问题）
+        if (StringUtils.isNotEmpty(body)) {
+            int contentLength = body.getBytes(StandardCharsets.UTF_8).length;
+            String current = headers.getFirst(HttpHeaders.CONTENT_LENGTH);
+            if (current == null || !current.equals(String.valueOf(contentLength))) {
+                headers.setContentLength(contentLength);
+                log.info(" RestUtil  --- request --- 修正/设置 Content-Length = " + contentLength + (current!=null?" (原值="+current+")":""));
+            }
+        }
         // 发送请求
         HttpEntity<String> request = new HttpEntity<>(body, headers);
         return RT.exchange(url, method, request, responseType);
@@ -250,12 +267,18 @@ public class RestUtil {
         // 创建自定义RestTemplate（如果需要设置超时）
         RestTemplate restTemplate = RT;
         if (timeout > 0) {
-            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            // 代码逻辑说明: [issues/8859]online表单java增强失效------------
+            HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
             requestFactory.setConnectTimeout(timeout);
             requestFactory.setReadTimeout(timeout);
             restTemplate = new RestTemplate(requestFactory);
-            // 解决乱码问题
-            restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+            // 解决乱码问题（替换 StringHttpMessageConverter 为 UTF-8）
+            for (int i = 0; i < restTemplate.getMessageConverters().size(); i++) {
+                if (restTemplate.getMessageConverters().get(i) instanceof StringHttpMessageConverter) {
+                    restTemplate.getMessageConverters().set(i, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+                    break;
+                }
+            }
         }
 
         // 请求体
@@ -273,11 +296,21 @@ public class RestUtil {
             url += ("?" + asUrlVariables(variables));
         }
 
+        // Content-Length 强制设置（解决可能出现的截断问题）
+        if (StringUtils.isNotEmpty(body) && !headers.containsKey(HttpHeaders.CONTENT_LENGTH)) {
+            int contentLength = body.getBytes(StandardCharsets.UTF_8).length;
+            String current = headers.getFirst(HttpHeaders.CONTENT_LENGTH);
+            if (current == null || !current.equals(String.valueOf(contentLength))) {
+                headers.setContentLength(contentLength);
+                log.info(" RestUtil  --- request(timeout) --- 修正/设置 Content-Length = " + contentLength + (current!=null?" (原值="+current+")":""));
+            }
+        }
+
         // 发送请求
         HttpEntity<String> request = new HttpEntity<>(body, headers);
         return restTemplate.exchange(url, method, request, responseType);
     }
-    
+
     /**
      * 获取JSON请求头
      */

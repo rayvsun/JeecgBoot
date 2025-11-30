@@ -21,6 +21,12 @@ public class SysUserSysDepPostModel {
      * 用户ID
      */
     private String id;
+
+    /**
+     * 用户名
+     */
+    private String username;
+    
     /* 真实姓名 */
     private String realname;
 
@@ -136,4 +142,29 @@ public class SysUserSysDepPostModel {
      * 职务
      */
     private String post;
+
+    /**
+     * 部门编码
+     */
+    private String orgCode;
+
+    /**
+     * 职务（字典）
+     */
+    private String positionType;
+
+    /**
+     * 排序
+     */
+    private Integer sort;
+
+    /**
+     * 是否隐藏联系方式 0否1是
+     */
+    private String izHideContact;
+
+    /**
+     * 工号
+     */
+    private String workNo;
 }
