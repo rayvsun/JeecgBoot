@@ -75,6 +75,10 @@ export function useListPage(options: ListPageOptions) {
         if (options?.tableProps?.useSearchForm !== false) {
           paramsForm = await getForm().validate();
           console.log('paramsForm', paramsForm);
+          // 在这里把执行beforeFetch
+          if (options?.tableProps?.beforeFetch) {
+            paramsForm = await options?.tableProps?.beforeFetch(paramsForm);
+          }
         }
       } catch (e) {
         console.warn(e);
@@ -132,8 +136,8 @@ export function useListPage(options: ListPageOptions) {
       for (const column of columns) {
         if(!column.defaultHidden){
           let dataIndex = column?.dataIndex;
-          if(column?.dataIndex!.toString().indexOf('_dictText')){
-            dataIndex = column?.dataIndex!.toString().replace('_dictText','')
+          if(column?.dataIndex?.toString()?.indexOf('_dictText') !== -1){
+            dataIndex = column?.dataIndex?.toString().replace('_dictText','')
           }
           exportFields.push(dataIndex);
         } else {
@@ -325,8 +329,10 @@ export function useListTable(tableProps: TableProps): [
 
   // 发送请求之前调用的方法
   function beforeFetch(params) {
+    // 判断是否已有排序参数（defSort 为数组时会转换为 defSortString）
+    const hasSortParams = params.column || params.defSortString || params.order;
     // 默认以 createTime 降序排序
-    return Object.assign({ column: 'createTime', order: 'desc' }, params);
+    return Object.assign(hasSortParams ? {} : { column: 'createTime', order: 'desc' }, params);
   }
 
   // 合并方法

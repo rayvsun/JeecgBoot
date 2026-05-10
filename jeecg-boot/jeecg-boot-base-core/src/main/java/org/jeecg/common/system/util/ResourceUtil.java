@@ -3,9 +3,7 @@ package org.jeecg.common.system.util;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.system.annotation.EnumDict;
 import org.jeecg.common.system.vo.DictModel;
-import org.jeecg.common.util.SpringContextUtils;
 import org.jeecg.common.util.oConvertUtils;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -13,6 +11,7 @@ import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.util.ClassUtils;
+
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -145,7 +144,9 @@ public class ResourceUtil {
      */
     private static void processEnumClass(String classname) {
         try {
-            Class<?> clazz = Class.forName(classname);
+            //update-begin---author:scott ---date:20260416  for：【PR#9538】Class.forName使用上下文类加载器，增强部署兼容性-----------
+            Class<?> clazz = Class.forName(classname, true, Thread.currentThread().getContextClassLoader());
+            //update-end---author:scott ---date:20260416  for：【PR#9538】Class.forName使用上下文类加载器，增强部署兼容性-----------
             EnumDict enumDict = clazz.getAnnotation(EnumDict.class);
 
             if (enumDict != null) {
@@ -183,10 +184,10 @@ public class ResourceUtil {
                 for (DictModel dm : dictItemList) {
                     String value = dm.getValue();
                     if (keySet.contains(value)) {
-                        List<DictModel> list = new ArrayList<>();
+                        // 修复bug：获取或创建该dictCode对应的list，而不是每次都创建新的list
+                        List<DictModel> list = map.computeIfAbsent(code, k -> new ArrayList<>());
                         list.add(new DictModel(value, dm.getText()));
-                        map.put(code, list);
-                        break;
+                        //break;
                     }
                 }
             }
